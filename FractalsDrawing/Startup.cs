@@ -1,4 +1,6 @@
-﻿using Microsoft.Xna.Framework;
+﻿using FractalsDrawing.Fractals;
+using FractalsDrawing.Services;
+using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 
@@ -8,6 +10,9 @@ namespace FractalsDrawing
     {
         private GraphicsDeviceManager _graphics;
         private SpriteBatch _spriteBatch;
+        private SpriteFont _spriteFont;
+
+        private AppoloCircles fractal;
 
         public Startup()
         {
@@ -18,7 +23,15 @@ namespace FractalsDrawing
 
         protected override void Initialize()
         {
-            // TODO: Add your initialization logic here
+            _graphics.PreferredBackBufferWidth = 1600;
+            _graphics.PreferredBackBufferHeight = 900;
+
+            Window.IsBorderless = true;
+
+            _graphics.SynchronizeWithVerticalRetrace = false;
+            base.IsFixedTimeStep = false;
+
+            _graphics.ApplyChanges();
 
             base.Initialize();
         }
@@ -26,8 +39,14 @@ namespace FractalsDrawing
         protected override void LoadContent()
         {
             _spriteBatch = new SpriteBatch(GraphicsDevice);
+            _spriteFont = Content.Load<SpriteFont>("debug");
 
-            // TODO: use this.Content to load your game content here
+            Services.AddService<SpriteBatch>(_spriteBatch);
+            Services.AddService<GraphicsDeviceManager>(_graphics);
+            Services.AddService<Debug>(new Debug(_spriteBatch, _spriteFont));
+            Services.AddService<FrameRate>(new FrameRate());
+
+            fractal = new AppoloCircles(Services);
         }
 
         protected override void Update(GameTime gameTime)
@@ -35,16 +54,24 @@ namespace FractalsDrawing
             if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed || Keyboard.GetState().IsKeyDown(Keys.Escape))
                 Exit();
 
-            // TODO: Add your update logic here
-
             base.Update(gameTime);
         }
 
         protected override void Draw(GameTime gameTime)
         {
-            GraphicsDevice.Clear(Color.CornflowerBlue);
+            GraphicsDevice.Clear(Color.Black);
 
-            // TODO: Add your drawing code here
+            Services.GetService<Debug>().DrawText(fractal.circles[0].position.ToString());
+
+            fractal.Draw();
+
+            #region SHOW FRAME RATE
+
+            var frameCouneter = Services.GetService<FrameRate>();
+            var frameRateString = "fps: " + frameCouneter.FrameUpdated().ToString();
+            Services.GetService<Debug>().DrawText(frameRateString, new Color(0, 200, 0), new Vector2(5, 5));
+
+            #endregion
 
             base.Draw(gameTime);
         }
